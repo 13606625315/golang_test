@@ -14,7 +14,7 @@ import (
 
 type User struct {
 	Id   int64
-	Name string `xorm:"varchar(64) notnull unique 'user_name'"`
+	Name string `xorm:"varchar(64) notnull 'user_name'"`
 	Age  int    `xorm:"default(18)"`
 }
 
@@ -23,11 +23,11 @@ type oper_i interface{
 }
 
 type oper_i_1 interface{
-	init(engine *xorm.Engine,user *User)
+	init(engine *xorm.Engine,items ...interface{})
 }
 
 type oper_s struct{
-	user *User
+	user [2]*User
 	engine *xorm.Engine
 }
 
@@ -35,17 +35,25 @@ func (_ *oper_s)handle(){
 
 }
 
-func (this *oper_s)init(engine *xorm.Engine,user *User){
-	this.user = user
+func (this *oper_s)init(engine *xorm.Engine,items ...interface{}){
+//	this.user = user
 	this.engine = engine
+	for i, x := range items {
+		switch a:=x.(type) {
+		case *User:
+			this.user[i] = a
+		default:
+			fmt.Printf("Param #%d is unknown\n", i)
+		}
+	}	
 }
 
 type insert_s struct{
 	Oper *oper_s
 }
 func (this *insert_s)handle(){
-	this.Oper.engine.Sync2(this.Oper.user)
-	affected, err := this.Oper.engine.Insert(this.Oper.user)
+	this.Oper.engine.Sync2(this.Oper.user[0])
+	affected, err := this.Oper.engine.Insert(this.Oper.user[0])
 	if err != nil {
 		log.Println(err)
 		return
@@ -58,18 +66,28 @@ type update_s struct{
 }
 func (this *update_s)handle(){
 	//this.Oper.engine.Sync2(this.Oper.user)
-	has, _ := this.Oper.engine.Get(this.Oper.user)
-	if(!has){
-		fmt.Println("not find",this.Oper.user)
-		return
+	tests := make([]User, 0)
+	this.Oper.engine.Where("user_name = ?", this.Oper.user[0].Name).Find(&tests)	
+
+	for _,v := range tests{
+		v.Name = this.Oper.user[1].Name
+		affected, err := this.Oper.engine.ID(v.Id).Update(v)
+		if err != nil {
+			log.Println(err)
+			return
+		}		
+		log.Println(affected)
 	}
 
-	affected, err := this.Oper.engine.Update(this.Oper.user)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	log.Println(affected)
+	//this.Oper.user[0].Name = this.Oper.user[1].Name;
+	//fmt.Println("name = ",this.Oper.user[0].Name)
+//	affected, err := this.Oper.engine.Update(tests)
+//	affected, err := this.Oper.engine.Update(this.Oper.user[0])
+//	if err != nil {
+//		log.Println(err)
+	//	return
+//	}
+//	log.Println(affected)
 }
 
 type delete_s struct{
@@ -77,7 +95,7 @@ type delete_s struct{
 }
 func (this *delete_s)handle(){
 
-	affected, err := this.Oper.engine.Delete(this.Oper.user)
+	affected, err := this.Oper.engine.Delete(this.Oper.user[0])
 	if err != nil {
 		log.Println(err)
 		return
@@ -90,19 +108,19 @@ type query_s struct{
 }
 func (this *query_s)handle(){
 	//this.Oper.engine.Sync2(this.Oper.user)
-	if(this.Oper.user.Name == ""){
+	if(this.Oper.user[0].Name == ""){
 		tests := make([]User, 0)
-		errr := this.Oper.engine.Distinct("id", "user_name", "age").Limit(10, 0).Find(&tests)
+		errr := this.Oper.engine.Distinct("id", "user_name", "age").Find(&tests)
 		if errr != nil {
 			panic(errr)
 		}
 		fmt.Printf("总共查询出 %d 条数据\n", len(tests))
 		for _, v := range tests {
-			fmt.Printf("信息Id: %d, 姓名: %s, 邮箱: %s\n", v.Id, v.Name, v.Age)
+			fmt.Printf("Id: %d, 姓名: %s, 年纪: %d\n", v.Id, v.Name, v.Age)
 		}
 	}else{
 		user := new(User)
-		user.Name = this.Oper.user.Name
+		user.Name = this.Oper.user[0].Name
 		has, _ := this.Oper.engine.Get(user)
 		if has {
 			log.Println(user)
@@ -111,6 +129,7 @@ func (this *query_s)handle(){
 }
 
 func factory_oper_init(oper string) (oper_i,oper_i_1){
+	fmt.Println("1111111");
 	switch oper {
 	case "insert":
 		m:=&insert_s{}
@@ -142,10 +161,14 @@ func main() {
     var oper string
     flag.StringVar(&db,"db","test","数据库")
     flag.StringVar(&name,"name","","姓名")
-    flag.StringVar(&oper,"oper","query","增删改查")
+	flag.StringVar(&oper,"oper","query","增删改查")
+	
+    var name_update string
+    flag.StringVar(&name_update,"name_update","","更新的姓名")	
+
     flag.Parse()
 
-	fmt.Println("Hello ab = ",db,"name = ",name,"oper = ",oper)
+	fmt.Println("Hello ab = ",db,"name = ",name,"oper = ",oper,"name_update = ",name_update)
 
 	//	engine, err := xorm.NewEngine("sqlite3", "./test.db")
 	engine, err := xorm.NewEngine("mysql", "root:root@tcp(localhost:3306)/?charset=utf8")
@@ -175,8 +198,9 @@ func main() {
 	engine.ShowSQL(true)
 
 	op,op_init:= factory_oper_init(oper)
-	user:=&User{Name:name}
-	op_init.init(engine, user)
+	user:=&User{Name:name }
+	user1:=&User{Name:name_update}
+	op_init.init(engine, user,user1)
 	op.handle()
 
 	return 
