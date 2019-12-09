@@ -14,6 +14,7 @@ require (
 	github.com/denisenkom/go-mssqldb v0.0.0-20191128021309-1d7a30a10f73 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
+	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-xorm/core v0.6.2 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/jackc/fake v0.0.0-20150926172116-812a484cc733 // indirect
