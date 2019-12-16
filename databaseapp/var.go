@@ -14,6 +14,15 @@ type User struct {
 	Id   int64
 	Name string `xorm:"varchar(64) notnull 'user_name'"`
 	Age  int    `xorm:"default(18)"`
+	nn string `xorm:"varchar(64) notnull 'user_nn'"`
+}
+
+func (u *User) TableName() string {
+	return u.nn
+}
+
+func (u *User) setTableName(str string)  {
+	u.nn = str
 }
 
 type oper_i interface{
@@ -98,11 +107,13 @@ func (this *query_s)handle(){
 	//this.Oper.engine.Sync2(this.Oper.user)
 	if(this.Oper.user[0].Name == ""){
 		tests := make([]User, 0)
-		errr := this.Oper.engine.Distinct("id", "user_name", "age").Find(&tests)
+		count ,errr := this.Oper.engine.Distinct("id", "user_name", "age").FindAndCount(&tests)
+
 		if errr != nil {
+			log.Println(errr)
 			panic(errr)
 		}
-		fmt.Printf("总共查询出 %d 条数据\n", len(tests))
+		fmt.Printf("总共查询出 %d 条数据\n", count)
 		for _, v := range tests {
 			fmt.Printf("Id: %d, 姓名: %s, 年纪: %d\n", v.Id, v.Name, v.Age)
 		}

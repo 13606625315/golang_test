@@ -59,43 +59,25 @@ func main() {
 	user1:=&User{Name:name_update}
 	op_init.init(engine, user, user1)
 	op.handle()
-
-	return 
 /*
-	if oper == "insert" {
-		engine.Sync2(new(User))
+	engine.DropTables("user")
+	log.Println(111)
+	user.nn = "user1"
+	engine.CreateTables(user)
+	log.Println(111)
+	has,_ := engine.IsTableEmpty("Persons");
+	fmt.Println(has);
+	has,_ = engine.IsTableEmpty("user");
+	fmt.Println(has);
+	has,_ = engine.IsTableEmpty("123");
+	fmt.Println(has);	
 
-		user1 := &User{Name: name}
-		affected, err := engine.Insert(user1)
-		if err != nil {
-			log.Println(err)
-			//return
-		}
-		log.Println(affected)
-	}else if oper == "query"{
-		if(name == ""){
-			tests := make([]User, 0)
-			errr := engine.Distinct("id", "user_name", "age").Limit(10, 0).Find(&tests)
-			if errr != nil {
-				panic(errr)
-			}
-			fmt.Printf("总共查询出 %d 条数据\n", len(tests))
-			for _, v := range tests {
-				fmt.Printf("信息Id: %d, 姓名: %s, 邮箱: %s\n", v.Id, v.Name, v.Age)
-			}
-		}else{
-			user := new(User)
-			user.Name = name
-			has, _ := engine.Get(user)
-			if has {
-				log.Println(user)
-			}
-		}
-
-	}else if oper == "delete"{
-
-	}else if oper == "update"{
-
-	}
+	has,_ = engine.IsTableExist("Persons");
+	fmt.Println(has);
+	has,_ = engine.IsTableExist("user");
+	fmt.Println(has);
+	has,_ = engine.IsTableExist("123");
+	fmt.Println(has);	
 */
+	return 
 }
